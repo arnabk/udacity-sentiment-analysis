@@ -8,62 +8,70 @@
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.0/css/bootstrap.min.css">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.0/js/bootstrap.min.js"></script>
-  <script>
-    $(function() {
-      $("button").click(function() {
-        $(".alert").hide();
-        $("#review, button").attr('disabled', true);
-        $('button').html('Processing...');
-        var reviewComment = $("#review").val();
-        $.post("https://www.google.com", reviewComment, function(result) {
-          if (result === 0) {
-            // negative
-            $("#results")
-              .append($('<li class="list-group-item">' + reviewComment + '<span class="badge badge-danger">Negative</span></li>'));
-            } else {
-              // positive
-              $("#results")
-              .append($('<li class="list-group-item">' + reviewComment + '<span class="badge badge-success">Positive</span></li>'));
-            }
-            $("#review").val('');
-          }, 'text')
-        .fail(function() {
-          $(".alert").show();
-        })
-        .always(function() {
-          $("#review, button").attr('disabled', false);
-          $('button').html('Submit');
-        });
-      });
-      $("#review").change(function() {
-        if ($(this).val()) {
-          $(this).attr('disabled', false);
-        } else {
-          $(this).attr('disabled', true);
-        }
-      });
-    })
-  </script>
-
 </head>
 
 <body style="margin: 10px;">
 
   <div class="card" style="width: 80%; margin: auto; padding: 20px;">
-    <div class="alert alert-danger" role="alert" style="display: hide;">
+    <div class="alert alert-danger" role="alert">
       Something went wrong while submitting data!
     </div>
     <h1>Is your review positive, or negative?</h1>
     <p>Enter your review below and click submit to find out...</p>
     <div class="form-group">
-      <label for="review">Review:</label>
+      <h4><label for="review">Review:</label></h4>
       <textarea class="form-control" rows="5" id="review" placeholder="Please write your review here."></textarea>
     </div>
-    <button type="submit" class="btn btn-primary" disabled>Submit</button>
-    <ul class="list-group" id="results">
-      <li class="list-group-item ">Cras justo odio <span class="badge badge-success">New</span> </li>
-    </ul>
+    <button id="submit" type="submit" class="btn btn-primary" style="width: 150px; margin-bottom: 10px;">Submit</button>
+    <ul class="list-group" id="results" />
   </div>
+
+  <script>
+    function disableInputsAndClearErrors() {
+      $(".alert").hide();
+      $("#submit, #review").attr('disabled', true);
+    }
+    function init() {
+      $(".alert").hide();
+      $("#submit").attr('disabled', true).html('Submit');
+      $("#review").attr('disabled', false).val('').focus();
+    }
+    $(function () {
+      init();
+      $("#submit").click(function () {
+
+        disableInputsAndClearErrors(true);
+        $('#submit').html('Processing...');
+        var reviewComment = $("#review").val();
+        if (!reviewComment) return;
+
+        $.post("https://i2jundytz4.execute-api.us-west-2.amazonaws.com/prod", reviewComment, function (result) {
+          $("#results")
+            .prepend(
+              $('<li class="list-group-item">'
+                + reviewComment
+                + '<span class="badge badge-' + (result == 0 ? 'danger' : 'success') + '" style="margin-left: 5px;">'
+                + (result == 0 ? 'Negative' : 'Positive')
+                + '</span></li>'));
+          init();
+        }, 'text')
+        .fail(function () {
+          $(".alert").show();
+          $("#submit").attr('disabled', false).html('Submit');
+          $('#review').attr('disabled', false).focus();
+        });
+
+      });
+
+      $("#review").bind('input propertychange', function () {
+        if ($(this).val()) {
+          $("button").attr('disabled', false);
+        } else {
+          $("button").attr('disabled', true);
+        }
+      });
+    })
+  </script>
 </body>
 
 </html>
